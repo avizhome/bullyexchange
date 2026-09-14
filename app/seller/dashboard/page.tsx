@@ -1,7 +1,34 @@
-export default function SellerDashboard() { return <main>
-      <header className="nav-shell">
-        <a className="brand" href="/"><span className="brand-mark"><span className="paw-dot paw-1"/><span className="paw-dot paw-2"/><span className="paw-dot paw-3"/><span className="paw-pad"/></span><span><strong>BullyExchange</strong><small>Buy • Sell • Swap • A Stronger Bully Community</small></span></a>
-        <nav className="desktop-nav"><a href="/">Home</a><a href="/puppies">Puppies</a><a href="/breeds">Breeds</a><a href="/stores">Stores</a><a className="active" href="/seller/apply">Become a Seller</a></nav>
-        <div className="nav-actions"><a className="login" href="/login">Log in</a><a className="button button-gold small-button" href="/signup">Sign up</a></div>
-      </header>
-<section className="dashboard-shell page-width"><div className="dashboard-top"><div><p className="eyebrow dark">SELLER PORTAL</p><h1>Bully Empire Kennels</h1><p className="muted">Manage your store, puppies and buyer enquiries.</p></div><span className="dashboard-status">✓ Store approved</span></div><div className="dashboard-grid"><aside className="dashboard-nav"><a className="selected" href="#">Overview</a><a href="#">My puppies</a><a href="#">Add puppy</a><a href="#">Messages <b>3</b></a><a href="#">Store profile</a><a href="#">Account</a></aside><div className="dashboard-main"><div className="metric-grid"><div><span>Active puppies</span><strong>12</strong><small>3 new this month</small></div><div><span>Buyer enquiries</span><strong>18</strong><small>3 unread</small></div><div><span>Store views</span><strong>1,284</strong><small>Last 30 days</small></div></div><div className="dashboard-panel"><div className="panel-heading"><div><p className="eyebrow dark">YOUR LISTINGS</p><h2>Recent puppies</h2></div><button className="button button-gold">+ Add puppy</button></div><div className="listing-table"><div className="listing-row table-head"><span>Puppy</span><span>Status</span><span>Price</span><span>Enquiries</span><span></span></div><div className="listing-row"><span><strong>Titan</strong><small>Standard American Bully</small></span><span className="status-live">Available</span><span>$4,000</span><span>7</span><button>Manage</button></div><div className="listing-row"><span><strong>Luna</strong><small>Pocket American Bully</small></span><span className="status-live">Available</span><span>$3,500</span><span>4</span><button>Manage</button></div><div className="listing-row"><span><strong>Boss</strong><small>Pocket American Bully</small></span><span className="status-reserved">Reserved</span><span>$4,200</span><span>7</span><button>Manage</button></div></div></div><div className="dashboard-panel"><p className="eyebrow dark">MESSAGES</p><h2>Recent enquiries</h2><div className="message-preview"><span className="seller-avatar">JM</span><div><strong>James M.</strong><p>Hi, is Titan still available? We’re located in Newcastle...</p></div><small>12 min ago</small></div><div className="message-preview"><span className="seller-avatar">SK</span><div><strong>Sarah K.</strong><p>Could you please tell me more about Luna’s vaccination history?</p></div><small>2 hrs ago</small></div></div></div></div></section></main> }
+import { createClient } from '@/lib/supabase/server'
+import { logout } from '@/app/actions'
+import { redirect } from 'next/navigation'
+
+export const dynamic = 'force-dynamic'
+
+export default async function SellerDashboard({ searchParams }: { searchParams: Promise<{ error?: string, message?: string }> }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: store } = await supabase.from('stores').select('*').eq('owner_id', user.id).maybeSingle()
+  if (!store) {
+    const { data: application } = await supabase.from('seller_applications').select('status').eq('user_id',user.id).order('created_at',{ascending:false}).limit(1).maybeSingle()
+    if (application?.status === 'pending') redirect('/seller/application-submitted')
+    redirect('/seller/apply')
+  }
+
+  const { data: puppies } = await supabase.from('puppies').select('*').eq('store_id',store.id).order('created_at',{ascending:false})
+  const { error, message } = await searchParams
+  const activeCount = puppies?.filter(p => p.status === 'available').length ?? 0
+
+  return <main>
+    <header className="nav-shell"><a className="brand" href="/"><span className="brand-mark"></span><span><strong>BullyExchange</strong><small>Seller Portal</small></span></a><nav className="desktop-nav"><a href="/">Marketplace</a><a href="/puppies">Puppies</a><a href="/stores">Stores</a></nav><form action={logout}><button className="button button-soft small-button" type="submit">Log out</button></form></header>
+    <section className="dashboard-shell page-width"><div className="dashboard-top"><div><p className="eyebrow dark">SELLER PORTAL</p><h1>{store.name}</h1><p className="muted">Manage your store and puppy listings.</p></div><span className="dashboard-status">{store.status === 'active' ? '✓ Store approved' : store.status}</span></div>
+    {error && <p className="form-error">{error}</p>}{message && <p className="form-success">{message}</p>}
+    <div className="dashboard-grid"><aside className="dashboard-nav"><a className="selected" href="/seller/dashboard">Overview</a><a href="/seller/dashboard/puppies/new">+ Add puppy</a><a href={`/stores/${store.slug}`}>View public store</a><form action={logout}><button className="dashboard-logout" type="submit">Log out</button></form></aside>
+    <div className="dashboard-main"><div className="metric-grid"><div><span>Available puppies</span><strong>{activeCount}</strong><small>Public listings</small></div><div><span>Total listings</span><strong>{puppies?.length ?? 0}</strong><small>All statuses</small></div><div><span>Store status</span><strong className="metric-status">{store.status}</strong><small>{store.location}</small></div></div>
+    <div className="dashboard-panel"><div className="panel-heading"><div><p className="eyebrow dark">YOUR LISTINGS</p><h2>Puppies</h2></div><a className="button button-gold" href="/seller/dashboard/puppies/new">+ Add puppy</a></div>
+      <div className="listing-table"><div className="listing-row table-head"><span>Puppy</span><span>Status</span><span>Price</span><span>Age</span><span>Manage</span></div>
+      {puppies?.length ? puppies.map(p => <div className="listing-row" key={p.id}><span><strong>{p.name}</strong><small>{p.bully_type || p.breed}</small></span><span className={p.status==='available'?'status-live':'status-reserved'}>{p.status}</span><span>${Number(p.price).toLocaleString()}</span><span>{p.age_weeks} weeks</span><span><a className="table-edit-link" href={`/seller/dashboard/puppies/${p.id}/edit`}>Edit</a></span></div>) : <p className="empty-state">No puppies yet. Add your first listing.</p>}
+      </div></div></div></div></section>
+  </main>
+}
