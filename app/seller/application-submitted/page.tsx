@@ -1,0 +1,7 @@
+export default function ApplicationSubmitted() { return <main>
+      <header className="nav-shell">
+        <a className="brand" href="/"><span className="brand-mark"><span className="paw-dot paw-1"/><span className="paw-dot paw-2"/><span className="paw-dot paw-3"/><span className="paw-pad"/></span><span><strong>BullyExchange</strong><small>Buy • Sell • Swap • A Stronger Bully Community</small></span></a>
+        <nav className="desktop-nav"><a href="/">Home</a><a href="/puppies">Puppies</a><a href="/breeds">Breeds</a><a href="/stores">Stores</a><a className="active" href="/seller/apply">Become a Seller</a></nav>
+        <div className="nav-actions"><a className="login" href="/login">Log in</a><a className="button button-gold small-button" href="/signup">Sign up</a></div>
+      </header>
+<section className="success-page"><div className="success-card"><div className="success-icon">✓</div><p className="eyebrow dark">APPLICATION RECEIVED</p><h1>Your seller application is pending review.</h1><p>We’ve received your BullyExchange store application. An administrator will review it before your store can be published.</p><div className="pending-box"><span>Status</span><strong>Pending approval</strong></div><div className="success-actions"><a href="/" className="button button-soft">Back to homepage</a><a href="/seller/dashboard" className="button button-gold">Preview seller dashboard</a></div></div></section></main> }
