@@ -14,7 +14,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <label>Password<input name="password" required autoComplete="current-password" type="password" placeholder="••••••••"/></label>
         <SubmitButton>Log in</SubmitButton>
       </form>
-      <p className="auth-foot">New to BullyExchange? <a href="/signup">Create an account</a></p>
+      <p className="auth-foot"><a href="/forgot-password">Forgot your password?</a></p><p className="auth-foot">New to BullyExchange? <a href="/signup">Create an account</a></p>
     </div></section>
   </main>
 }
