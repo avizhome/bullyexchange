@@ -1,9 +1,10 @@
 import { config } from './config'
 import { createBrowserClient } from '@supabase/ssr'
 
-export function createClient() {
+export function createClient(detectSessionInUrl = true) {
   return createBrowserClient(
     config().url,
-    config().key
+    config().key,
+    { auth: { detectSessionInUrl } }
   )
 }

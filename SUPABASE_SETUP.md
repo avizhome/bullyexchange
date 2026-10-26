@@ -46,3 +46,9 @@ The migration creates `puppy-images`: public, JPEG/PNG/WebP, maximum 3 MiB. The 
 The 3 MiB limit leaves room below Vercel's function request size ceiling. SVG uploads are rejected. Each listing has one primary photo. Public image URLs are accessible even when a listing is hidden or a store suspended: hidden means metadata is private, not that uploaded photos are confidential. Upload puppy photos only. If confidential draft media is required, change to a private bucket and signed-URL delivery before using it for sensitive content.
 
 See the official [Supabase storage access control guide](https://supabase.com/docs/guides/storage/security/access-control) for the underlying policy model.
+
+## Password recovery
+
+The live recovery pages are /forgot-password and /reset-password. Set Site URL to https://bullyexchange.vercel.app and add exactly https://bullyexchange.vercel.app/auth/callback to allowed redirect URLs. The server request uses PKCE and the callback exchanges the code; links must be opened in the requesting browser. Dashboard-generated legacy recovery links are handled in the browser from their URL fragment and never sent to the application server. Invalid/expired links allow requesting a new email. The user alone enters and submits the new password. A successful reset signs out the account sessions before login with the new password.
+
+Custom SMTP is still required for reliable public email delivery. Do not disable confirmations to work around delivery restrictions.

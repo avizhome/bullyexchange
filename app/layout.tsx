@@ -1,3 +1,4 @@
+import { RecoveryRedirect } from '@/components/recovery-redirect'
 import type { Metadata } from "next";
 import "./globals.css";
 
@@ -11,7 +12,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body><nav className="mobile-nav" aria-label="Mobile navigation"><a href="/">Home</a><a href="/puppies">Puppies</a><a href="/stores">Stores</a><a href="/seller/dashboard">My account</a></nav>{children}</body>
+      <body><RecoveryRedirect/><nav className="mobile-nav" aria-label="Mobile navigation"><a href="/">Home</a><a href="/puppies">Puppies</a><a href="/stores">Stores</a><a href="/seller/dashboard">My account</a></nav>{children}</body>
     </html>
   );
 }
