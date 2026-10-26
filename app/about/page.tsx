@@ -1,0 +1,2 @@
+import { Header } from '@/components/header'
+export default function Page(){ return <main><Header/><section className="page-width dashboard-shell"><h1>About BullyExchange</h1><p>BullyExchange connects people with approved breeder stores and their puppy listings.</p><p>Seller approval is a marketplace access review. Buyers should independently verify breeder identity, registration, health records and circumstances before making arrangements.</p><a className="button button-soft" href="/puppies">Browse puppies</a></section></main> }

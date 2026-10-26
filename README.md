@@ -1,58 +1,41 @@
-# BullyExchange marketplace
+# BullyExchange
 
-First front-end build for the approved dog seller marketplace.
+Continues the existing `bullyexchange-functional-mvp-complete` project found in Downloads. The original gold/charcoal design, layout and `public/bullyexchange-logo.png` are retained. Compared with https://github.com/avizhome/bullyexchange at bed8733: application source matched the recovered copy. Changes are prepared on the codex/complete-marketplace branch. Good Dog Supply and the Downloads originals are untouched.
 
-## Run locally
+## Features
 
-```bash
-npm install
+- Supabase email/password signup, confirmation endpoint, login, logout and role-aware account navigation.
+- Seller application, duplicate protection, admin approval/rejection and automatic store creation.
+- Store editing and public contact email, seller dashboard, image upload/replacement, puppy creation/editing/deletion and availability/reservation/sold/hidden statuses.
+- Database-backed homepage, public stores and listings, search/filter/sort/pagination, direct seller enquiries.
+- Ownership checks in server actions, RLS, column restrictions, protected store status, storage ownership rules, server/browser validation and responsive navigation.
+- Safe missing-configuration page, loading/empty/error/not-found screens. No service-role key is required by the application.
+
+## Run
+
+Use Node 22.18 or newer (Node 22 LTS is the tested CI target).
+
+```sh
+npm ci
+# Copy .env.example to .env.local and set your existing project's public values.
 npm run dev
 ```
 
-Then open http://localhost:3000
+See [SUPABASE_SETUP.md](SUPABASE_SETUP.md) before connecting to an existing database. Do not create a replacement Supabase project; existing accounts should continue to work with the same project.
 
-## Current pages
+```sh
+npm run typecheck
+npm test
+npm run build
+npm start
+```
 
-The homepage is implemented. Links for Puppies, Breeds, Stores, Seller Application, Login and Signup are included but those pages are intentionally not built yet.
+The build uses Webpack because this Windows device blocks native compiler binaries; the supported WebAssembly fallback built successfully. The same build command works on Vercel.
 
-## Recommended build order
+## Handoff
 
-1. Homepage
-2. Puppies search/listing page
-3. Puppy details page
-4. Stores directory
-5. Individual store page
-6. Breeds directory
-7. Breed landing page
-8. Buyer sign-up/login
-9. Seller application
-10. Seller dashboard
-11. Admin approval dashboard
-12. Messaging
-13. Supabase data + auth + storage
-14. Subscription billing later
+- [DEPLOYMENT.md](DEPLOYMENT.md): GitHub/Vercel preparation and required access.
+- [TEST_CHECKLIST.md](TEST_CHECKLIST.md): automated results, scope and remaining live checks.
+- [CHANGELOG.md](CHANGELOG.md): changes from the recovered copy.
 
-## Backend plan
-
-Use Supabase for:
-- Auth
-- PostgreSQL
-- Row Level Security
-- puppy/store data
-- seller application workflow
-- image storage
-- buyer/seller messages
-
-Seller status model:
-`pending -> approved -> suspended -> cancelled`
-
-Do not hard-delete a seller when suspended; hide their public listings and retain admin history.
-
-
-## Added prototype routes
-- `/seller/apply`
-- `/seller/application-submitted`
-- `/seller/dashboard`
-- `/admin/sellers`
-- `/login`
-- `/signup`
+Not a verified production release yet: live signup/email/session persistence, real Supabase uploads and deployed RLS must be checked after database setup. Operator identity, support contact and final marketplace/privacy terms are also still needed. Informational pages identify those missing details explicitly.

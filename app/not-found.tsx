@@ -1,0 +1,1 @@
+export default function NotFound(){return <main className="auth-page"><section className="auth-card"><h1>Page not found</h1><p>This listing may have been removed or is no longer public.</p><a className="button button-gold" href="/puppies">Browse puppies</a></section></main>}
