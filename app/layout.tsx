@@ -11,7 +11,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body><nav className="mobile-nav" aria-label="Mobile navigation"><a href="/">Home</a><a href="/puppies">Puppies</a><a href="/stores">Stores</a><a href="/seller/dashboard">My account</a></nav>{children}</body>
     </html>
   );
 }

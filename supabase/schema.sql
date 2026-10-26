@@ -1,3 +1,4 @@
+begin;
 -- BullyExchange MVP database schema
 -- Run this entire file in Supabase Dashboard -> SQL Editor.
 
@@ -123,6 +124,7 @@ begin
   if a.status <> 'pending' then raise exception 'Application is not pending'; end if;
 
   generated_slug := trim(both '-' from regexp_replace(lower(a.store_name), '[^a-z0-9]+', '-', 'g'));
+  if generated_slug = '' then generated_slug := 'store'; end if;
   if exists(select 1 from public.stores where slug = generated_slug) then
     generated_slug := generated_slug || '-' || substr(a.id::text, 1, 6);
   end if;
@@ -131,7 +133,7 @@ begin
   set status = 'approved', reviewed_at = now()
   where id = application_id;
 
-  update public.profiles set role = 'seller' where id = a.user_id;
+  update public.profiles set role = 'seller' where id = a.user_id and role <> 'admin';
 
   insert into public.stores (owner_id, application_id, name, slug, location, primary_breed, bully_type, about, status)
   values (a.user_id, a.id, a.store_name, generated_slug, a.location, a.primary_breed, a.bully_type, a.about, 'active')
@@ -151,39 +153,52 @@ grant select, insert, update on public.profiles, public.seller_applications, pub
 grant execute on function public.approve_seller_application(uuid) to authenticated;
 
 -- Profiles
+drop policy if exists "profiles own select" on public.profiles;
 create policy "profiles own select" on public.profiles for select to authenticated
 using ((select auth.uid()) = id or public.is_admin());
+drop policy if exists "profiles own update" on public.profiles;
 create policy "profiles own update" on public.profiles for update to authenticated
 using ((select auth.uid()) = id or public.is_admin())
 with check ((select auth.uid()) = id or public.is_admin());
 
 -- Applications
+drop policy if exists "applications own select" on public.seller_applications;
 create policy "applications own select" on public.seller_applications for select to authenticated
 using ((select auth.uid()) = user_id or public.is_admin());
+drop policy if exists "applications own insert" on public.seller_applications;
 create policy "applications own insert" on public.seller_applications for insert to authenticated
 with check ((select auth.uid()) = user_id);
+drop policy if exists "applications admin update" on public.seller_applications;
 create policy "applications admin update" on public.seller_applications for update to authenticated
 using (public.is_admin()) with check (public.is_admin());
 
 -- Stores: public only sees active stores; owner/admin can see theirs.
+drop policy if exists "active stores public read" on public.stores;
 create policy "active stores public read" on public.stores for select to anon, authenticated
 using (status = 'active' or owner_id = (select auth.uid()) or public.is_admin());
+drop policy if exists "store owner update" on public.stores;
 create policy "store owner update" on public.stores for update to authenticated
 using (owner_id = (select auth.uid()) or public.is_admin())
 with check (owner_id = (select auth.uid()) or public.is_admin());
 
 -- Puppies: public sees visible listings from active stores.
+drop policy if exists "public puppies read" on public.puppies;
 create policy "public puppies read" on public.puppies for select to anon, authenticated
 using (
   (status in ('available','reserved','sold') and exists(select 1 from public.stores s where s.id = store_id and s.status='active'))
   or exists(select 1 from public.stores s where s.id = store_id and s.owner_id = (select auth.uid()))
   or public.is_admin()
 );
+drop policy if exists "seller puppy insert" on public.puppies;
 create policy "seller puppy insert" on public.puppies for insert to authenticated
 with check (exists(select 1 from public.stores s where s.id = store_id and s.owner_id = (select auth.uid()) and s.status='active'));
+drop policy if exists "seller puppy update" on public.puppies;
 create policy "seller puppy update" on public.puppies for update to authenticated
 using (exists(select 1 from public.stores s where s.id = store_id and (s.owner_id = (select auth.uid()) or public.is_admin())))
 with check (exists(select 1 from public.stores s where s.id = store_id and (s.owner_id = (select auth.uid()) or public.is_admin())));
 
 -- After signing up your own account, promote it once to admin in SQL Editor:
 -- update public.profiles set role = 'admin' where id = (select id from auth.users where email = 'YOUR-EMAIL@example.com');
+
+
+commit;

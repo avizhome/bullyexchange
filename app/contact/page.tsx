@@ -1,0 +1,2 @@
+import { Header } from '@/components/header'
+export default function Page(){ return <main><Header/><section className="page-width dashboard-shell"><h1>Contact a seller</h1><p>Open a puppy listing and choose Contact seller to email the store directly.</p><p>BullyExchange does not process payments. Seller contact emails are published by store owners. An operator support address must be configured before launch.</p><a className="button button-soft" href="/puppies">Browse puppies</a></section></main> }

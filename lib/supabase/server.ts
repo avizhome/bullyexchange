@@ -1,12 +1,16 @@
+import { config } from './config'
 import { createServerClient } from '@supabase/ssr'
+import { configured } from './config'
+import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 
 export async function createClient() {
+  if (!configured()) redirect('/setup')
   const cookieStore = await cookies()
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    config().url,
+    config().key,
     {
       cookies: {
         getAll() {

@@ -1,3 +1,7 @@
+import { Header } from '@/components/header'
+import { createClient } from '@/lib/supabase/server'
+import { configured } from '@/lib/supabase/config'
+export const dynamic = 'force-dynamic'
 const bullyImages = {
   female:
     "https://upload.wikimedia.org/wikipedia/commons/5/58/Cirock_American_Bully_Female_%288597745629%29.jpg",
@@ -18,106 +22,17 @@ const breeds = [
   { name: "Cane Corso", image: bullyImages.male },
 ];
 
-const puppies = [
-  {
-    name: "Titan",
-    breed: "American Bully",
-    age: "8 weeks",
-    sex: "Male",
-    price: "$4,000",
-    location: "Sydney, NSW",
-    image: bullyImages.male,
-    accent: "Blue & white",
-  },
-  {
-    name: "Luna",
-    breed: "Pocket Bully",
-    age: "9 weeks",
-    sex: "Female",
-    price: "$3,500",
-    location: "Melbourne, VIC",
-    image: bullyImages.female,
-    accent: "Blue",
-  },
-  {
-    name: "Kobe",
-    breed: "XL Bully",
-    age: "10 weeks",
-    sex: "Male",
-    price: "$4,500",
-    location: "Brisbane, QLD",
-    image: bullyImages.standard,
-    accent: "Champagne",
-  },
-  {
-    name: "Bella",
-    breed: "American Bully",
-    age: "8 weeks",
-    sex: "Female",
-    price: "$3,800",
-    location: "Gold Coast, QLD",
-    image: bullyImages.female,
-    accent: "Blue & white",
-  },
-];
-
-const stores = [
-  {
-    name: "Bully Empire Kennels",
-    location: "Sydney, NSW",
-    breeds: "American Bully • Pocket Bully",
-    available: 12,
-    image: bullyImages.male,
-    initials: "BE",
-  },
-  {
-    name: "Aussie Bully Co",
-    location: "Melbourne, VIC",
-    breeds: "XL Bully • Standard Bully",
-    available: 8,
-    image: bullyImages.female,
-    initials: "AB",
-  },
-  {
-    name: "Ironline Bullies",
-    location: "Brisbane, QLD",
-    breeds: "American Bully • XL Bully",
-    available: 6,
-    image: bullyImages.standard,
-    initials: "IB",
-  },
-];
-
-export default function Home() {
+export default async function Home() {
+  const db=configured()?await createClient():null
+  const [dogs,shops]=db?await Promise.all([
+    db.from('puppies').select('*,stores!inner(status)').eq('status','available').eq('stores.status','active').order('created_at',{ascending:false}).limit(4),
+    db.from('stores').select('*,puppies(id,status)').eq('status','active').order('created_at',{ascending:false}).limit(3)
+  ]):[{data:[],error:null},{data:[],error:null}]
+  const puppies=(dogs.data??[]).map(p=>({...p,image:p.image_url||'/images/puppy-1.svg',age:`${p.age_weeks} weeks`,accent:p.colour||'',price:new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD',maximumFractionDigits:0}).format(Number(p.price))}))
+  const stores=(shops.data??[]).map(s=>({...s,image:s.banner_url||'/images/puppy-1.svg',initials:s.name.slice(0,2).toUpperCase(),breeds:s.primary_breed,available:s.puppies?.filter((p:{status:string})=>p.status==='available').length??0}))
   return (
     <main>
-      <header className="nav-shell">
-        <a className="brand" href="/">
-          <span className="brand-mark">
-            <span className="paw-dot paw-1" />
-            <span className="paw-dot paw-2" />
-            <span className="paw-dot paw-3" />
-            <span className="paw-pad" />
-          </span>
-          <span>
-            <strong>BullyExchange</strong>
-            <small>Buy • Sell • Swap • A Stronger Bully Community</small>
-          </span>
-        </a>
-
-        <nav className="desktop-nav">
-          <a className="active" href="/">Home</a>
-          <a href="/puppies">Puppies</a>
-          <a href="/breeds">Breeds</a>
-          <a href="/stores">Stores</a>
-          <a href="/seller/apply">Become a Seller</a>
-        </nav>
-
-        <div className="nav-actions">
-          <a className="login" href="/login">Log in</a>
-          <a className="button button-gold small-button" href="/signup">Sign up</a>
-        </div>
-      </header>
+      <Header/>
 
       <section className="hero">
         <div className="hero-bg" />
@@ -135,14 +50,14 @@ export default function Home() {
               <span> American Bully.</span>
             </h1>
             <p className="hero-copy">
-              Discover healthy puppies from approved breeders and verified sellers.
+              Discover puppy listings from approved sellers.
               Search by breed, location, age or trusted store.
             </p>
 
-            <form className="search-panel">
+            <form className="search-panel" action="/puppies" method="get">
               <label>
                 <span>Breed</span>
-                <select defaultValue="American Bully">
+                <select name="breed" defaultValue="American Bully">
                   <option>American Bully</option>
                   <option>Pocket Bully</option>
                   <option>XL Bully</option>
@@ -153,16 +68,16 @@ export default function Home() {
 
               <label>
                 <span>Location</span>
-                <input placeholder="All locations" />
+                <input name="location" placeholder="All locations" />
               </label>
 
               <label>
                 <span>Age</span>
-                <select defaultValue="Any age">
-                  <option>Any age</option>
-                  <option>Under 8 weeks</option>
-                  <option>8–12 weeks</option>
-                  <option>12+ weeks</option>
+                <select name="age" defaultValue="">
+                  <option value="">Any age</option>
+                  <option value="under8">Under 8 weeks</option>
+                  <option value="8to12">8–12 weeks</option>
+                  <option value="over12">Over 12 weeks</option>
                 </select>
               </label>
 
@@ -174,7 +89,7 @@ export default function Home() {
             <div className="trust-row">
               <span><b>✓</b> Approved sellers</span>
               <span><b>♡</b> Responsible breeding</span>
-              <span><b>◉</b> Verified profiles</span>
+              <span><b>◉</b> Approved stores</span>
               <span><b>✉</b> Direct enquiries</span>
             </div>
           </div>
@@ -186,19 +101,19 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="section page-width breeds-section">
+      <section id="breeds" className="section page-width breeds-section">
         <div className="section-heading">
           <div>
             <p className="eyebrow dark">BROWSE</p>
             <h2>Popular breeds</h2>
           </div>
-          <a href="/breeds">View all breeds →</a>
+          <a href="/#breeds">View all breeds →</a>
         </div>
 
         <div className="breed-row">
           {breeds.map((breed, index) => (
             <a
-              href={`/breeds/${breed.name.toLowerCase().replaceAll(" ", "-")}`}
+              href={`/puppies?${["Pocket Bully","XL Bully","Standard Bully"].includes(breed.name) ? `breed=American+Bully&type=${breed.name.split(" ")[0]}` : `breed=${encodeURIComponent(breed.name)}`}`}
               className="breed-item"
               key={breed.name}
             >
@@ -228,7 +143,7 @@ export default function Home() {
             <a href="/puppies">View all puppies →</a>
           </div>
 
-          <div className="puppy-grid">
+          {!puppies.length && <p>{dogs.error ? "Listings are temporarily unavailable." : "New listings from approved sellers will appear here."}</p>}<div className="puppy-grid">
             {puppies.map((puppy, index) => (
               <article className="puppy-card" key={puppy.name}>
                 <div className="image-wrap">
@@ -237,8 +152,8 @@ export default function Home() {
                     alt={`${puppy.name} - ${puppy.breed}`}
                     className={`listing-image listing-image-${index}`}
                   />
-                  <div className="verified-badge">✓ Verified seller</div>
-                  <button className="heart" aria-label={`Save ${puppy.name}`}>♡</button>
+                  <div className="verified-badge">✓ Approved seller</div>
+
                 </div>
 
                 <div className="card-body">
@@ -253,8 +168,7 @@ export default function Home() {
                   <p className="muted">{puppy.sex} • {puppy.age} • {puppy.accent}</p>
                   <p className="muted location">⌖ {puppy.location}</p>
 
-                  <a className="button button-soft full" href="/puppies">
-                    View puppy
+                  <a className="button button-soft full" href={`/puppies/${puppy.id}`}>View puppy
                   </a>
                 </div>
               </article>
@@ -272,7 +186,7 @@ export default function Home() {
           <a href="/stores">View all stores →</a>
         </div>
 
-        <div className="store-grid">
+        {!stores.length && <p>Approved breeder stores will appear here.</p>}<div className="store-grid">
           {stores.map((store, index) => (
             <article className="store-card" key={store.name}>
               <div className="store-banner">
@@ -293,7 +207,7 @@ export default function Home() {
                 <p className="muted">⌖ {store.location}</p>
                 <p>{store.breeds}</p>
                 <strong className="available">{store.available} puppies available</strong>
-                <a href="/stores">View store →</a>
+                <a href={`/stores/${store.slug}`}>View store →</a>
               </div>
             </article>
           ))}
@@ -303,11 +217,11 @@ export default function Home() {
       <section className="why-section">
         <div className="page-width why-grid">
           <div className="why-intro">
-            <p className="eyebrow dark">WHY BULLYMARKET</p>
+            <p className="eyebrow dark">WHY BULLYEXCHANGE</p>
             <h2>Built around trust.</h2>
             <p>
               Sellers apply before they can advertise. Approved sellers receive a
-              verified profile and can be suspended if marketplace standards are not met.
+              approved profile and can be suspended if marketplace standards are not met.
             </p>
           </div>
 
@@ -339,7 +253,7 @@ export default function Home() {
             Explore American Bully types and other popular breeds, then see
             available puppies from approved sellers.
           </p>
-          <a className="button button-dark" href="/breeds">Browse all breeds</a>
+          <a className="button button-dark" href="/#breeds">Browse all breeds</a>
           <img src={bullyImages.male} alt="" className="cta-dog" />
         </div>
 
@@ -347,7 +261,7 @@ export default function Home() {
           <p className="eyebrow">BECOME A SELLER</p>
           <h2>Ready to open your store?</h2>
           <p>
-            Apply to become an approved seller. Once verified, build your store
+            Apply to become an approved seller. Once approved, build your store
             profile and start listing puppies.
           </p>
           <a className="button button-gold" href="/seller/apply">
@@ -379,7 +293,7 @@ export default function Home() {
           <div>
             <strong>Marketplace</strong>
             <a href="/puppies">Puppies</a>
-            <a href="/breeds">Breeds</a>
+            <a href="/#breeds">Breeds</a>
             <a href="/stores">Stores</a>
           </div>
 
@@ -394,7 +308,7 @@ export default function Home() {
             <strong>Support</strong>
             <a href="/about">About us</a>
             <a href="/contact">Contact</a>
-            <a href="/terms">Terms</a>
+            <a href="/terms">Marketplace information</a><a href="/privacy">Privacy</a>
           </div>
         </div>
 
